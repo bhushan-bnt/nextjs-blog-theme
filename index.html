@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Employee Task Details</title>
+  <style>
+    /* CSS styles */
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f1f9ff;
+    }
+
+    h1 {
+      text-align: center;
+      background-color: #c2e2ff;
+      padding: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+
+    th {
+      background-color: #c2e2ff;
+    }
+
+    #addTaskForm {
+      display: flex;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    #addTaskForm input[type="text"],
+    #addTaskForm input[type="date"],
+    #addTaskForm select,
+    #addTaskForm button {
+      margin: 5px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+      flex: 1;
+      max-width: 200px;
+    }
+
+    #addTaskForm button {
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+
+    #addTaskForm button:hover {
+      background-color: #45a049;
+    }
+
+    .action-buttons button {
+      margin-right: 5px;
+      background-color: #f44336;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+
+    .action-buttons button.edit {
+      background-color: #2196F3;
+    }
+
+    .action-buttons button.delete {
+      background-color: #f44336;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .filters input[type="text"],
+    .filters select {
+      margin: 5px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+
+    #clearFilters {
+      margin-left: 5px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+      background-color: #f44336;
+      color: white;
+      cursor: pointer;
+    }
+
+    #clearFilters:hover {
+      background-color: #d32f2f;
+    }
+
+    @media (max-width: 768px) {
+      #addTaskForm input[type="text"],
+      #addTaskForm input[type="date"],
+      #addTaskForm select,
+      #addTaskForm button {
+        flex: 0 0 100%;
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Employee Task Details</h1>
+
+  <form id="addTaskForm" action="save_task.php" method="POST">
+    <input type="text" id="taskTitle" placeholder="Task Title" required>
+    <input type="text" id="taskUser" placeholder="User" required>
+    <input type="text" id="taskAssignee" placeholder="Assignee" required>
+    <input type="date" id="taskIssueDate" required>
+
+    <select id="taskStatus">
+      <option value="">-- Select Status --</option>
+      <option value="Pending">Pending</option>
+      <option value="In Progress">In Progress</option>
+      <option value="Completed">Completed</option>
+    </select>
+
+    <button type="submit">Add Task</button>
+  </form>
+
+  <div class="filters">
+    <input type="text" id="filterTitle" placeholder="Filter by Title">
+    <input type="text" id="filterUser" placeholder="Filter by User">
+    <input type="text" id="filterAssignee" placeholder="Filter by Assignee">
+    <select id="filterStatus">
+      <option value="">-- Filter by Status --</option>
+      <option value="Pending">Pending</option>
+      <option value="In Progress">In Progress</option>
+      <option value="Completed">Completed</option>
+    </select>
+    <button id="clearFilters">Clear Filters</button>
+  </div>
+
+  <table id="taskTable">
+    <tr>
+      <th>#</th>
+      <th>Title</th>
+      <th>User</th>
+      <th>Assignee</th>
+      <th>Issue Date</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </table>
+
+  <script>
+    // JavaScript code
+
+    const taskForm = document.getElementById('addTaskForm');
+    const taskTable = document.getElementById('taskTable');
+    const clearFiltersButton = document.getElementById('clearFilters');
+
+    // Initialize tasks array
+    let tasks = [];
+
+    // Function to add a task
+    const addTask = (event) => {
+      event.preventDefault();
+
+      // Retrieve form inputs
+      const title = document.getElementById('taskTitle').value;
+      const user = document.getElementById('taskUser').value;
+      const assignee = document.getElementById('taskAssignee').value;
+      const issueDate = document.getElementById('taskIssueDate').value;
+      const status = document.getElementById('taskStatus').value;
+
+      // Create task object
+      const task = {
+        title,
+        user,
+        assignee,
+        issueDate,
+        status
+      };
+
+      // Add task to tasks array
+      tasks.unshift(task);
+
+      // Clear form inputs
+      taskForm.reset();
+
+      // Render task table
+      renderTable();
+
+      // Log tasks array
+      console.log(tasks);
+    };
+
+    // Function to render the task table
+    const renderTable = () => {
+      // Clear existing table rows
+      taskTable.innerHTML = '';
+
+      // Render table header
+      const headerRow = document.createElement('tr');
+      const headerColumns = ['#', 'Title', 'User', 'Assignee', 'Issue Date', 'Status', 'Actions'];
+      headerColumns.forEach(column => {
+        const th = document.createElement('th');
+        th.textContent = column;
+        headerRow.appendChild(th);
+      });
+      taskTable.appendChild(headerRow);
+
+      // Filter tasks
+      const filterTitle = document.getElementById('filterTitle').value.toLowerCase();
+      const filterUser = document.getElementById('filterUser').value.toLowerCase();
+      const filterAssignee = document.getElementById('filterAssignee').value.toLowerCase();
+      const filterStatus = document.getElementById('filterStatus').value;
+
+      const filteredTasks = tasks.filter(task =>
+        task.title.toLowerCase().includes(filterTitle) &&
+        task.user.toLowerCase().includes(filterUser) &&
+        task.assignee.toLowerCase().includes(filterAssignee) &&
+        (filterStatus === '' || task.status === filterStatus)
+      );
+
+      // Render table rows
+      filteredTasks.forEach((task, index) => {
+        const row = document.createElement('tr');
+
+        const indexCell = document.createElement('td');
+        indexCell.textContent = index + 1;
+        row.appendChild(indexCell);
+
+        const titleCell = document.createElement('td');
+        titleCell.textContent = task.title;
+        row.appendChild(titleCell);
+
+        const userCell = document.createElement('td');
+        userCell.textContent = task.user;
+        row.appendChild(userCell);
+
+        const assigneeCell = document.createElement('td');
+        assigneeCell.textContent = task.assignee;
+        row.appendChild(assigneeCell);
+
+        const issueDateCell = document.createElement('td');
+        issueDateCell.textContent = task.issueDate;
+        row.appendChild(issueDateCell);
+
+        const statusCell = document.createElement('td');
+        statusCell.textContent = task.status;
+        row.appendChild(statusCell);
+
+        const actionsCell = document.createElement('td');
+        const editButton = document.createElement('button');
+        editButton.textContent = 'Edit';
+        editButton.className = 'edit';
+        editButton.addEventListener('click', () => editTask(task));
+        actionsCell.appendChild(editButton);
+
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete';
+        deleteButton.className = 'delete';
+        deleteButton.addEventListener('click', () => deleteTask(task));
+        actionsCell.appendChild(deleteButton);
+
+        row.appendChild(actionsCell);
+
+        taskTable.appendChild(row);
+      });
+    };
+
+    // Function to edit a task
+    const editTask = (task) => {
+      // Populate form with task data
+      document.getElementById('taskTitle').value = task.title;
+      document.getElementById('taskUser').value = task.user;
+      document.getElementById('taskAssignee').value = task.assignee;
+      document.getElementById('taskIssueDate').value = task.issueDate;
+      document.getElementById('taskStatus').value = task.status;
+
+      // Remove task from tasks array
+      tasks = tasks.filter(t => t !== task);
+
+      // Render task table
+      renderTable();
+    };
+
+    // Function to delete a task
+    const deleteTask = (task) => {
+      // Remove task from tasks array
+      tasks = tasks.filter(t => t !== task);
+
+      // Render task table
+      renderTable();
+    };
+
+    // Event listener for task form submission
+    taskForm.addEventListener('submit', addTask);
+
+    // Event listener for filter inputs
+    const filterInputs = document.querySelectorAll('.filters input, .filters select');
+    filterInputs.forEach(input => input.addEventListener('input', renderTable));
+
+    // Event listener for clear filters button
+    clearFiltersButton.addEventListener('click', () => {
+      filterInputs.forEach(input => (input.value = ''));
+      renderTable();
+    });
+  </script>
+</body>
+</html>
